@@ -18,6 +18,14 @@ GPT Engineer is made to be easy to adapt, extend, and make your agent learn how 
 - Fast handovers back and forth between AI and human
 - Simplicity, all computation is "resumable" and persisted to the filesystem
 
+## Browsing Markdowns
+
+You might want to look at our other committed markdown files here's our Markdowns!
+- [Disclaimer](DISCLAIMER.md)
+- [Roadmap](ROADMAP.md)
+- [The Terms of use :)](TERMS_OF_USE.md)
+- [The License (not md)](LICENSE)
+
 ## Usage
 
 Choose either **stable** or **development**.
