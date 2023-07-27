@@ -8,10 +8,13 @@ from wtforms import StringField, PasswordField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, ValidationError
 from wtforms.validators import Email
 from sqlalchemy.orm import Session
+from datetime import datetime
+from sqlalchemy import desc  # Add this import to enable sorting in descending order
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
-app.config['SECRET_KEY'] = 'your_secret_key_here'  # Replace with a secure secret key
+app.config['SECRET_KEY'] = 'kumar1234'  # Replace with a secure secret key
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 bcrypt = Bcrypt(app)
@@ -49,9 +52,9 @@ class BlogPost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # New column for date and time of creation
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('posts', lazy=True))
-
 class LoginForm(FlaskForm):
     username_or_email = StringField('Username or Email', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
@@ -182,20 +185,29 @@ def register_page():
 
     return render_template('register.html', form=form)
 
+@app.route('/show-data')
+def show_data_page():
+    # Query the database to retrieve all users and blog posts
+    users = User.query.all()
+    blog_posts = BlogPost.query.all()
+
+    # Render the HTML template and pass the user and blog post data to it
+    return render_template('show_data.html', users=users, blog_posts=blog_posts)
 
 # Blog Pages
 @app.route('/blog')
 def blog_page():
-    posts = BlogPost.query.all()
-    return render_template('blog.html', posts=posts)
+    # Query the database to retrieve all blog posts and sort them based on the created_at field in descending order
+    blog_posts = BlogPost.query.order_by(desc(BlogPost.created_at)).all()
 
+    # Render the HTML template and pass the blog posts data to it
+    return render_template('blog.html', blog_posts=blog_posts)
 
 @app.route('/failure/<message>/<redirect_url>')
 def failure_page(message, redirect_url):
     m = message.split(':')
     message = {'title': m[0], 'message': m[1]} # 'Invalid email or password'
     return render_template('failure.html', message=message, redirect_url=redirect_url)
-    return render_template('failure.html', message={'title': 'Invalid email or password', 'message':' error'})
 
 @app.route('/create-blog', methods=['GET', 'POST'])
 @login_required
@@ -205,17 +217,27 @@ def create_blog_page():
     if request.method == 'POST' and form.validate_on_submit():
         title = form.title.data
         content = form.content.data
-        title = request.form['title']
-        content = request.form['content']
-        new_post = BlogPost(title=title, content=content, user=current_user)
-        print('2222222222222222222222222222')
-        print(new_post.title)
-        print(new_post.content)
-        print('2222222222222222222222222222')
+
+        # Set the date and time of creation
+        created_at = datetime.utcnow()
+
+        # Create a new blog post using the form data, the current user, and the created_at date
+        new_post = BlogPost(title=title, content=content, user=current_user, created_at=created_at)
+
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for('home_page'))
+    
     return render_template('createblog.html', form=form)
+
+@app.route('/blog/<int:post_id>')
+def blog_post_page(post_id):
+    # Query the database to retrieve the blog post with the given post_id
+    post = BlogPost.query.get_or_404(post_id)
+
+    # Render the HTML template and pass the blog post data to it
+    return render_template('blogpost.html', post=post)
+
 
 @app.route('/logout')
 @login_required
@@ -228,4 +250,5 @@ def logout():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run()
+    app.run(debug=
+            True)
